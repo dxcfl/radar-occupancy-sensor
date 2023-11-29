@@ -1,2 +1,2 @@
-# radar-occupancy-sensor
-Occupancy Sensor (Matter) based on the nRF5340 DK and the S2GO RADAR BGT60LTR11
+# {radar-occupancy-sensor
+A simple occupancy Ssnsor (Matter) based on the nRF5340 DK and the S2GO RADAR BGT60LTR11 ...
