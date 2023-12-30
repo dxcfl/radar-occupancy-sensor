@@ -48,7 +48,7 @@ namespace
 	constexpr size_t kAppEventQueueSize = 10;
 	constexpr uint32_t kFactoryResetTriggerTimeout = 6000;
 	constexpr EndpointId kOccupancyEndpointId = 1;
-	constexpr uint64_t kOccupancyOccupiedToUnoccupiedTransitionTimeMs = 60 * 1000;
+	constexpr uint64_t kOccupancyOccupiedToUnoccupiedTransitionTimeMs = APP_OCCUPANCY_RESET_MS;
 
 	K_MSGQ_DEFINE(sAppEventQueue, sizeof(AppEvent), kAppEventQueueSize, alignof(AppEvent));
 	k_timer sFunctionTimer;
@@ -433,13 +433,18 @@ void AppTask::SensorMeasureHandler(const AppEvent &)
 {
 	uint64_t now = k_uptime_get();
 	uint64_t motion_time = bgt60.GetLastTdTime();
+	uint64_t time_diff = now - motion_time;
 
-	if (now - motion_time < kOccupancyOccupiedToUnoccupiedTransitionTimeMs)
+	if (time_diff < kOccupancyOccupiedToUnoccupiedTransitionTimeMs)
 	{
+		// occupancy transition from unoccupied to occupied
+		LOG_INF("Occupancy: occupied (reset in %llu ms)",kOccupancyOccupiedToUnoccupiedTransitionTimeMs - time_diff);
 		chip::app::Clusters::OccupancySensing::Attributes::Occupancy::Set(kOccupancyEndpointId, chip::app::Clusters::OccupancySensing::OccupancyBitmap::kOccupied);
 	}
 	else
 	{
+		// occupancy transition from occupied to unoccupied
+		LOG_INF("Occupancy: unoccupied");
 		chip::app::Clusters::OccupancySensing::Attributes::Occupancy::Set(kOccupancyEndpointId, 0x00);
 	}
 }

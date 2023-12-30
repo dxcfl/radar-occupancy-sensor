@@ -1,3 +1,13 @@
+/*
+ * BGT60.h
+ *
+ * Simple 'driver'/access class for the Infineon BGT60LTR11 Radar Shield2Go
+ *    
+ * Copyright (c) 2023 dxcfl
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #pragma once
 
 #include <zephyr/kernel.h>

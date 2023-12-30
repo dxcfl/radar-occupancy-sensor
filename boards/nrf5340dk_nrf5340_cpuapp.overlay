@@ -33,6 +33,7 @@
 &usbd {
 	status = "disabled";
 };
+
 / {
     bgt60 {
         compatible = "gpio-keys";
