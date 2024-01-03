@@ -3,7 +3,7 @@
 ### Matter: Radar Occupancy Sensor 
 
 A simple occupancy sensor based on the [Matter: Template](https://github.com/nrfconnect/sdk-nrf/tree/main/samples/matter/template) sample
-from the [nRF Connect SDK: sdk-nrf](https://github.com/nrfconnect/sdk-nrf).
+from the [nRF Connect SDK: sdk-nrf](https://github.com/nrfconnect/sdk-nrf) v2.4.2.
 
 ### Supported/tested boards
 - Nordic [nRF5340 DK](https://www.nordicsemi.com/Products/Development-hardware/nrf5340-dk)
