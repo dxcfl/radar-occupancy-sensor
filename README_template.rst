@@ -88,6 +88,10 @@ For this sample, you can use one of the following :ref:`onboarding information f
        - MT:Y.K9042C00KA0648G00
        - 34970112332
 
+.. include:: ../lock/README.rst
+    :start-after: matter_door_lock_sample_onboarding_start
+    :end-before: matter_door_lock_sample_onboarding_end
+
 |matter_cd_info_note_for_samples|
 
 Configuration
@@ -98,9 +102,9 @@ Configuration
 Matter template build types
 ===========================
 
-.. include:: ../lock/README.rst
-    :start-after: matter_door_lock_sample_configuration_file_types_start
-    :end-before: matter_door_lock_sample_configuration_file_types_end
+.. include:: ../light_bulb/README.rst
+    :start-after: matter_light_bulb_sample_configuration_file_types_start
+    :end-before: matter_light_bulb_sample_configuration_file_types_end
 
 Device Firmware Upgrade support
 ===============================
@@ -113,6 +117,13 @@ FEM support
 ===========
 
 .. include:: /includes/sample_fem_support.txt
+
+Factory data support
+====================
+
+.. include:: ../lock/README.rst
+    :start-after: matter_door_lock_sample_factory_data_start
+    :end-before: matter_door_lock_sample_factory_data_end
 
 User interface
 **************
@@ -144,14 +155,14 @@ Before you start testing the application, you can select one of the `Matter temp
 Selecting a build type in |VSC|
 -------------------------------
 
-.. include:: /getting_started/modifying.rst
+.. include:: /config_and_build/modifying.rst
    :start-after: build_types_selection_vsc_start
    :end-before: build_types_selection_vsc_end
 
 Selecting a build type from command line
 ----------------------------------------
 
-.. include:: /getting_started/modifying.rst
+.. include:: /config_and_build/modifying.rst
    :start-after: build_types_selection_cmd_start
    :end-before: For example, you can replace the
 

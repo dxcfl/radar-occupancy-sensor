@@ -19,9 +19,9 @@
 
 struct k_timer;
 
-class AppTask
-{
+class AppTask {
 public:
+
 	static AppTask &Instance()
 	{
 		static AppTask sAppTask;

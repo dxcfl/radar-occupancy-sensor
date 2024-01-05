@@ -3,7 +3,7 @@
 ### Matter: Radar Occupancy Sensor 
 
 A simple occupancy sensor based on the [Matter: Template](https://github.com/nrfconnect/sdk-nrf/tree/main/samples/matter/template) sample
-from the [nRF Connect SDK: sdk-nrf](https://github.com/nrfconnect/sdk-nrf) v2.4.2.
+from the [nRF Connect SDK: sdk-nrf](https://github.com/nrfconnect/sdk-nrf) v2.5.1.
 
 ### Supported/tested boards
 - Nordic [nRF5340 DK](https://www.nordicsemi.com/Products/Development-hardware/nrf5340-dk)
@@ -11,7 +11,7 @@ from the [nRF Connect SDK: sdk-nrf](https://github.com/nrfconnect/sdk-nrf) v2.4.
 
 ### SDK
 
-Tested on [nRF Connect SDK: sdk-nrf](https://github.com/nrfconnect/sdk-nrf) versions 2.4.2 and 2.5.0.
+Tested on [nRF Connect SDK: sdk-nrf](https://github.com/nrfconnect/sdk-nrf) versions 2.4.2, 2.5.0 and 2.5.1.
 
 ### Radar sensor
 Infineon [S2GO RADAR BGT60LTR11](https://www.infineon.com/cms/de/product/evaluation-boards/s2go-radar-bgt60ltr11/)

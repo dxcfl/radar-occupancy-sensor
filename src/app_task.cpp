@@ -6,6 +6,7 @@
 
 #include "app_task.h"
 #include "app_config.h"
+#include "fabric_table_delegate.h"
 #include "led_util.h"
 
 #include <platform/CHIPDeviceLayer.h>
@@ -47,8 +48,8 @@ namespace
 {
 	constexpr size_t kAppEventQueueSize = 10;
 	constexpr uint32_t kFactoryResetTriggerTimeout = 6000;
+	constexpr uint32_t kSensorTimerTimeout = 2000;
 	constexpr EndpointId kOccupancyEndpointId = 1;
-	constexpr uint64_t kOccupancyOccupiedToUnoccupiedTransitionTimeMs = APP_OCCUPANCY_RESET_MS;
 
 	K_MSGQ_DEFINE(sAppEventQueue, sizeof(AppEvent), kAppEventQueueSize, alignof(AppEvent));
 	k_timer sFunctionTimer;
@@ -192,6 +193,11 @@ CHIP_ERROR AppTask::Init()
 	k_timer_init(&sFunctionTimer, &AppTask::FunctionTimerTimeoutCallback, nullptr);
 	k_timer_user_data_set(&sFunctionTimer, this);
 
+#ifdef CONFIG_CHIP_OTA_REQUESTOR
+	/* OTA image confirmation must be done before the factory data init. */
+	OtaConfirmNewImage();
+#endif
+
 	/* Initialize CHIP server */
 #if CONFIG_CHIP_FACTORY_DATA
 	ReturnErrorOnFailure(mFactoryDataProvider.Init());
@@ -209,11 +215,12 @@ CHIP_ERROR AppTask::Init()
 	ReturnErrorOnFailure(chip::Server::GetInstance().Init(initParams));
 	ConfigurationMgr().LogDeviceConfig();
 	PrintOnboardingCodes(chip::RendezvousInformationFlags(chip::RendezvousInformationFlag::kBLE));
+	AppFabricTableDelegate::Init();
 
 	LOG_INF("Setting up sensor timer ...");
 	k_timer_init(&sSensorTimer, &SensorTimerHandler, nullptr);
 	k_timer_user_data_set(&sSensorTimer, this);
-	
+
 	/*
 	 * Add CHIP event handler and start CHIP thread.
 	 * Note that all the initialization code should happen prior to this point to avoid data races
@@ -421,7 +428,7 @@ void AppTask::DispatchEvent(const AppEvent &event)
 
 void AppTask::SensorActivateHandler(const AppEvent &)
 {
-	StartSensorTimer(2000);
+	StartSensorTimer(kSensorTimerTimeout);
 }
 
 void AppTask::SensorDeactivateHandler(const AppEvent &)
@@ -431,20 +438,48 @@ void AppTask::SensorDeactivateHandler(const AppEvent &)
 
 void AppTask::SensorMeasureHandler(const AppEvent &)
 {
+	uint16_t aOccupiedToUnoccupiedDelay = 0;
+	chip::BitMask<chip::app::Clusters::OccupancySensing::OccupancyBitmap> aOccupancy = 0x00;
+	uint32_t occupiedToUnoccupiedDelayMs = 0;
+	bool occupied = false;
+	uint64_t lastMotion = bgt60.GetLastTdTime();
 	uint64_t now = k_uptime_get();
-	uint64_t motion_time = bgt60.GetLastTdTime();
-	uint64_t time_diff = now - motion_time;
 
-	if (time_diff < kOccupancyOccupiedToUnoccupiedTransitionTimeMs)
+	// retrieve OccupiedToUnoccupiedDelay attribute from OccupancySensing endpoint ...
+	chip::app::Clusters::OccupancySensing::Attributes::PIROccupiedToUnoccupiedDelay::Get(kOccupancyEndpointId, &aOccupiedToUnoccupiedDelay);
+	occupiedToUnoccupiedDelayMs = aOccupiedToUnoccupiedDelay * 1000; // secs to millis
+	// if occupiedToUnoccupiedDelayMs < timeout for the SensorTimer, adjust value to avoid that a motion detection passes by unnoticed ...
+	occupiedToUnoccupiedDelayMs = occupiedToUnoccupiedDelayMs < kSensorTimerTimeout ? kSensorTimerTimeout : occupiedToUnoccupiedDelayMs;
+
+	// retrieve Occupancy attribute from OccupancySensing endpoint ...
+	chip::app::Clusters::OccupancySensing::Attributes::Occupancy::Get(kOccupancyEndpointId, &aOccupancy);
+	occupied = aOccupancy.HasAny(chip::app::Clusters::OccupancySensing::OccupancyBitmap::kOccupied);
+
+	/*
+	LOG_INF("Occupancy: %d - Occupied-to-unoccupied-delay: %llu ms", occupied, occupiedToUnoccupiedDelayMs);
+	LOG_INF("Now: %llu - Last motion detected at %llu", now, lastMotion);
+	*/
+
+	if (lastMotion + occupiedToUnoccupiedDelayMs >= now)
 	{
-		// occupancy transition from unoccupied to occupied
-		LOG_INF("Occupancy: occupied (reset in %llu ms)",kOccupancyOccupiedToUnoccupiedTransitionTimeMs - time_diff);
-		chip::app::Clusters::OccupancySensing::Attributes::Occupancy::Set(kOccupancyEndpointId, chip::app::Clusters::OccupancySensing::OccupancyBitmap::kOccupied);
+		LOG_INF("Occupancy: OCCUPIED (reset in %lld ms)", (lastMotion + occupiedToUnoccupiedDelayMs) - now);
+		// occupancy transition from unoccupied to occupied: update Occupancy attribute in OccupancySensing endpoint
+		if (!occupied)
+		{
+			PlatformMgr().LockChipStack();
+			chip::app::Clusters::OccupancySensing::Attributes::Occupancy::Set(kOccupancyEndpointId, chip::app::Clusters::OccupancySensing::OccupancyBitmap::kOccupied);
+			PlatformMgr().UnlockChipStack();
+		}
 	}
 	else
 	{
-		// occupancy transition from occupied to unoccupied
-		LOG_INF("Occupancy: unoccupied");
-		chip::app::Clusters::OccupancySensing::Attributes::Occupancy::Set(kOccupancyEndpointId, 0x00);
+		LOG_INF("Occupancy: UNOCCUPIED");
+		// occupancy transition from occupied to unoccupied: update Occupancy attribute in OccupancySensing endpoint
+		if (occupied)
+		{
+			PlatformMgr().LockChipStack();
+			chip::app::Clusters::OccupancySensing::Attributes::Occupancy::Set(kOccupancyEndpointId, 0x00);
+			PlatformMgr().UnlockChipStack();
+		}
 	}
 }
