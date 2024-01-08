@@ -50,6 +50,7 @@ namespace
 	constexpr uint32_t kFactoryResetTriggerTimeout = 6000;
 	constexpr uint32_t kSensorTimerTimeout = 2000;
 	constexpr EndpointId kOccupancyEndpointId = 1;
+	constexpr EndpointId kContactEndpointId = 2;
 
 	K_MSGQ_DEFINE(sAppEventQueue, sizeof(AppEvent), kAppEventQueueSize, alignof(AppEvent));
 	k_timer sFunctionTimer;
@@ -463,22 +464,26 @@ void AppTask::SensorMeasureHandler(const AppEvent &)
 	if (lastMotion + occupiedToUnoccupiedDelayMs >= now)
 	{
 		LOG_INF("Occupancy: OCCUPIED (reset in %lld ms)", (lastMotion + occupiedToUnoccupiedDelayMs) - now);
-		// occupancy transition from unoccupied to occupied: update Occupancy attribute in OccupancySensing endpoint
 		if (!occupied)
 		{
 			PlatformMgr().LockChipStack();
+			// occupancy transition from unoccupied to occupied: update Occupancy attribute in OccupancySensing endpoint
 			chip::app::Clusters::OccupancySensing::Attributes::Occupancy::Set(kOccupancyEndpointId, chip::app::Clusters::OccupancySensing::OccupancyBitmap::kOccupied);
+			// & update BooleanState.StateValue attribute in Contact endpoint: closed to open ...
+			chip::app::Clusters::BooleanState::Attributes::StateValue::Set(kContactEndpointId, false);
 			PlatformMgr().UnlockChipStack();
 		}
 	}
 	else
 	{
 		LOG_INF("Occupancy: UNOCCUPIED");
-		// occupancy transition from occupied to unoccupied: update Occupancy attribute in OccupancySensing endpoint
 		if (occupied)
 		{
 			PlatformMgr().LockChipStack();
+			// occupancy transition from occupied to unoccupied: update Occupancy attribute in OccupancySensing endpoint ...
 			chip::app::Clusters::OccupancySensing::Attributes::Occupancy::Set(kOccupancyEndpointId, 0x00);
+			// & update BooleanState.StateValue attribute in Contact endpoint: open to closed ...
+			chip::app::Clusters::BooleanState::Attributes::StateValue::Set(kContactEndpointId, true);
 			PlatformMgr().UnlockChipStack();
 		}
 	}

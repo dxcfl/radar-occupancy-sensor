@@ -38,6 +38,9 @@ void emberAfClusterInitCallback(EndpointId endpoint, ClusterId clusterId)
     case app::Clusters::BasicInformation::Id:
         emberAfBasicInformationClusterInitCallback(endpoint);
         break;
+    case app::Clusters::BooleanState::Id:
+        emberAfBooleanStateClusterInitCallback(endpoint);
+        break;
     case app::Clusters::Descriptor::Id:
         emberAfDescriptorClusterInitCallback(endpoint);
         break;
@@ -88,6 +91,11 @@ void __attribute__((weak)) emberAfAdministratorCommissioningClusterInitCallback(
     (void) endpoint;
 }
 void __attribute__((weak)) emberAfBasicInformationClusterInitCallback(EndpointId endpoint)
+{
+    // To prevent warning
+    (void) endpoint;
+}
+void __attribute__((weak)) emberAfBooleanStateClusterInitCallback(EndpointId endpoint)
 {
     // To prevent warning
     (void) endpoint;
